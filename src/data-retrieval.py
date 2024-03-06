@@ -10,6 +10,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import base64  
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -35,39 +36,58 @@ def authenticate(token_path: str = "src/data/token.json"):
             token.write(creds.to_json())
     return creds
 
-def get_emails(n : int, creds : Credentials):
-    """
-    Gets the last n emails from the user's inbox.
-    """
-    try:
-        # Call the Gmail API to fetch the last 3 messages
-        service = build("gmail", "v1", credentials=creds)
-        messages = service.users().messages().list(userId="me", labelIds=["INBOX"], maxResults=n).execute().get("messages", [])
 
-        if not messages:
-            print("No messages found.")
-            return
+  
+def get_emails(n : int, creds : Credentials):  
+    """  
+    Gets the last n emails from the user's inbox.  
+    """  
+    service = build('gmail', 'v1', credentials=creds) 
+  
+    # request a list of all the messages 
+    result = service.users().messages().list(userId='me', maxResults = n, labelIds = ["INBOX", "CATEGORY_PERSONAL"]).execute() 
+  
+    # We can also pass maxResults to get any number of emails. Like this: 
+    # result = service.users().messages().list(maxResults=200, userId='me').execute() 
+    messages = result.get('messages') 
+  
+    # iterate through all the messages 
+    for msg in messages: 
+        # Get the message from its id 
+        txt = service.users().messages().get(userId='me', id=msg['id']).execute() 
+  
+        # Use try-except to avoid any Errors 
+        try: 
+            # Get value of 'payload' from dictionary 'txt' 
+            payload = txt['payload'] 
+            headers = payload['headers'] 
+  
+            # Look for Subject and Sender Email in the headers 
+            for d in headers: 
+                if d['name'] == 'Subject': 
+                    subject = d['value'] 
+                if d['name'] == 'From': 
+                    sender = d['value'] 
+  
+            # The Body of the message is in Encrypted format. So, we have to decode it. 
+            # Get the data and decode it with base 64 decoder. 
+            parts = payload.get('parts')[0] 
+            data = parts['body']['data'] 
+            data = data.replace("-","+").replace("_","/") 
+            body = base64.b64decode(data).decode('utf-8')
 
-        print(f"Last {n} emails:")
-        for message in messages:
-            msg = service.users().messages().get(userId="me", id=message["id"]).execute()
-            message_data = msg["payload"]["headers"]
-            for header in message_data:
-                if header["name"] == "Subject":
-                    subject = header["value"]
-                    print("Subject:", subject)
-            # Fetching message body
-            try:
-                msg_str = msg["snippet"]
-                print("Snippet:", msg_str)
-            except Exception as e:
-                print("Error:", e)
-
-    except HttpError as error:
-        # Handle errors from Gmail API
-        print(f"An error occurred: {error}")
+            # Printing the subject, sender's email and message 
+            print("--------------------------------")
+            print("Subject: ", subject) 
+            print("From: ", sender) 
+            print("Message: ", body) 
+            print("--------------------------------")
+            print('\n') 
+        except Exception as e: 
+            print("Unable to get the message: ", e)
+            print(payload)
 
 
 if __name__ == "__main__":
     credentials = authenticate()
-    get_emails(3, credentials)
+    print(get_emails(6, credentials))
