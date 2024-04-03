@@ -16,9 +16,10 @@ import base64
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/drive.metadata.readonly"]
 
 
-
 def authenticate(token_path: str = "src/data/token.json"):
-    """Authenticate the user and return the credentials."""
+    """Authenticate the user and return the credentials.
+        If a new service is added, token.json needs to be deleted.
+    """
     creds = None
     # Load credentials from token.json if it exists
     # TODO: this expires and the refresh doesnt work?
@@ -97,7 +98,7 @@ def get_notes(creds : Credentials):
     print(results)
 
 
-
+# TODO: clean up auth
 def search_file(creds : Credentials):
     """Search file in drive location"""
     creds = None
