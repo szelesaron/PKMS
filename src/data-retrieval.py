@@ -113,28 +113,61 @@ def get_drive_files(creds : Credentials):
     items = results.get("files", [])
     return items
 
+from time import strptime
 
+def get_calendar_events(creds : Credentials) -> list:
+    """Get the user's calendar events
+    :param creds: The user's credentials
+    :return: The user's calendar events:
+    
+    In  this standard format: {'kind': 'calendar#event', 'etag': '"3424160851032000"', 'id': '7cr9l0ggad4dm9h68vdijaro5k', 'status': 'confirmed', 'htmlLink': 'https://www.google.com/calendar/event?eid=N2NyOWwwZ2dhZDRkbTloNjh2ZGlqYXJvNWsgc3plbGVzYXJvbjM5QG0', 'created': '2024-04-02T17:53:45.000Z', 'updated': '2024-04-02T17:53:45.516Z', 'summary': 'Fogorvos', 'creator': {'email': 'szelesaron39@gmail.com', 'self': True}, 'organizer': {'email': 'szelesaron39@gmail.com', 'self': True}, 'start': {'dateTime': '2024-04-05T10:30:00+02:00', 'timeZone': 'Europe/Budapest'}, 'end': {'dateTime': '2024-04-05T11:30:00+02:00', 'timeZone': 'Europe/Budapest'}, 'iCalUID': '7cr9l0ggad4dm9h68vdijaro5k@google.com', 'sequence': 0, 'reminders': {'useDefault': True}, 'eventType': 'default'}    
+    """
 
-def get_calendar_events(creds : Credentials):
-    """Get the user's calendar events"""
 
     service = build("calendar", "v3", credentials=creds)
-
     # Call the Calendar v3 API
     now = datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
     events_result = (
         service.events()
         .list(
             calendarId="primary",
-            timeMin=now,
-            maxResults=10,
-            singleEvents=True,
-            orderBy="startTime",
+            # this sets the start date
+            # timeMin=now,
+            # maxResults=n,
+            # singleEvents=True,
+            # orderBy="startTime",
         )
         .execute()
     )
     events = events_result.get("items", [])
-    return events
+
+    events_list = []
+    for event in events:
+        try:
+            start = event["start"].get("dateTime", event["start"].get("date"))
+            end = event["end"].get("dateTime", event["end"].get("date"))
+            summary = event["summary"]
+            description = event.get("description")
+            timezone = event["start"].get("timeZone")
+            link = event["htmlLink"]
+
+            start_date_object = datetime.fromisoformat(start)
+            end_date_object = datetime.fromisoformat(end)
+
+            events_list.append(
+                {
+                    "start_date": start_date_object.strftime('%Y-%m-%d-%H-%M'),
+                    "end_date": end_date_object.strftime('%Y-%m-%d-%H:%M'),
+                    "summary": summary,
+                    "description": description,
+                    "timezone": timezone,
+                    "link": link,
+                }
+            )
+        except KeyError:
+            print("KeyError in getting event:")
+            print(event)
+    return events_list
 
 if __name__ == "__main__":
     credentials = authenticate()
@@ -143,4 +176,3 @@ if __name__ == "__main__":
     # print(get_notes(credentials))
     # print(get_drive_files(credentials))
     print(get_calendar_events(credentials))
-    
