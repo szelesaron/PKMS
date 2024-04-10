@@ -22,7 +22,6 @@ def authenticate(token_path: str = "src/auth_data/token.json"):
     """
     creds = None
     # Load credentials from token.json if it exists
-    # TODO: this expires and the refresh doesnt work?
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
@@ -47,47 +46,33 @@ def get_emails(n : int, creds : Credentials):
     """  
     service = build('gmail', 'v1', credentials=creds) 
   
-    # request a list of all the messages 
     result = service.users().messages().list(userId='me', maxResults = n, labelIds = ["INBOX", "CATEGORY_PERSONAL"]).execute() 
   
-    # We can also pass maxResults to get any number of emails. Like this: 
-    # result = service.users().messages().list(maxResults=200, userId='me').execute() 
+    emails = []
     messages = result.get('messages') 
-  
-    # iterate through all the messages 
     for msg in messages: 
-        # Get the message from its id 
         txt = service.users().messages().get(userId='me', id=msg['id']).execute() 
-  
-        # Use try-except to avoid any Errors 
         try: 
-            # Get value of 'payload' from dictionary 'txt' 
             payload = txt['payload'] 
             headers = payload['headers'] 
-  
-            # Look for Subject and Sender Email in the headers 
             for d in headers: 
                 if d['name'] == 'Subject': 
                     subject = d['value'] 
                 if d['name'] == 'From': 
                     sender = d['value'] 
   
-            # The Body of the message is in Encrypted format. So, we have to decode it. 
             # Get the data and decode it with base 64 decoder. 
-            parts = payload.get('parts')[0] 
-            data = parts['body']['data'] 
+            try:
+                parts = payload.get('parts')[0] 
+                data = parts['body']['data']
+            except KeyError:
+                data = parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
             data = data.replace("-","+").replace("_","/") 
             body = base64.b64decode(data).decode('utf-8')
-
-            # Printing the subject, sender's email and message 
-            print("####################################################################")
-            print("Subject: ", subject) 
-            print("From: ", sender) 
-            print("Message: ", body) 
-            print('\n') 
+            emails.append({"subject": subject, "sender": sender, "body": body})
         except Exception as e: 
             print("Unable to get the message: ", e)
-            print(payload)
+    return emails
 
 # TODO: only for enterprise accounts
 def get_notes(creds : Credentials):
@@ -166,7 +151,11 @@ def get_calendar_events(n : int, creds : Credentials) -> list:
 if __name__ == "__main__":
     credentials = authenticate()
 
-    print(get_emails(6, credentials))
+    res = get_emails(6, credentials)
+    for r in res:
+        print(r)
+        print("\n")
+    print(len(res))
     # print(get_notes(credentials))
     # print(get_drive_files(credentials))
     # print(get_calendar_events(n=1000, creds=credentials))
