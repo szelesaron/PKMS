@@ -66,6 +66,7 @@ def get_emails(n : int, creds : Credentials):
                 parts = payload.get('parts')[0] 
                 data = parts['body']['data']
             except KeyError:
+                parts = payload.get('parts')[0]
                 data = parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
             data = data.replace("-","+").replace("_","/") 
             body = base64.b64decode(data).decode('utf-8')
