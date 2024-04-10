@@ -39,15 +39,13 @@ def authenticate(token_path: str = "src/auth_data/token.json"):
     return creds
 
 
-# TODO: improve parsing, handle email chains
-def get_emails(n : int, creds : Credentials):  
+def get_emails(n : int, creds : Credentials, q = None):  
     """  
     Gets the last n emails from the user's inbox.  
     """  
     service = build('gmail', 'v1', credentials=creds) 
   
-    result = service.users().messages().list(userId='me', maxResults = n, labelIds = ["INBOX", "CATEGORY_PERSONAL"]).execute() 
-  
+    result = service.users().messages().list(userId='me', maxResults = n, q=None, labelIds = ["INBOX", "CATEGORY_PERSONAL"]).execute() 
     emails = []
     messages = result.get('messages') 
     for msg in messages: 
@@ -61,26 +59,31 @@ def get_emails(n : int, creds : Credentials):
                 if d['name'] == 'From': 
                     sender = d['value'] 
 
-            parts = payload.get("parts")[0]
-            print(payload)
-            print("-----------------")
+            email_parts = payload.get("parts")[0]
+            # handle attachements
+            attachment_names = []
+            attatchement_parts = payload.get("parts")[1:]
+            for attachment_part in attatchement_parts:
+                if attachment_part:
+                    if attachment_part["filename"]:
+                        attachment_names.append(attachment_part["filename"])
             try:
-                data = parts['body']['data']
+                data = email_parts['body']['data']
             except KeyError:
-                data = parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
+                data = email_parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
             data = data.replace("-","+").replace("_","/") 
             body = base64.b64decode(data).decode('utf-8')
-            emails.append({"subject": subject, "sender": sender, "body": body})
+            emails.append({"subject": subject, "sender": sender, "body": body, "attachments" : attachment_names})
         except Exception as e: 
             print("Unable to get the message: ", e)
     return emails
 
-# TODO: only for enterprise accounts
-def get_notes(creds : Credentials):
-    service = build('keep', 'v1', credentials=creds)
-    # Call the API
-    results = service.notes().list().execute()
-    print(results)
+# # TODO: only for enterprise accounts
+# def get_notes(creds : Credentials):
+#     service = build('keep', 'v1', credentials=creds)
+#     # Call the API
+#     results = service.notes().list().execute()
+#     print(results)
 
 
 def get_drive_files(creds : Credentials):
@@ -150,13 +153,13 @@ def get_calendar_events(n : int, creds : Credentials) -> list:
     return events_list
 
 if __name__ == "__main__":
+    # print(get_notes(credentials))
     credentials = authenticate()
 
-    res = get_emails(10, credentials)
+    res = get_emails(5, credentials)
     for r in res:
         print(r)
         print("\n")
     print(len(res))
-    # print(get_notes(credentials))
     # print(get_drive_files(credentials))
     # print(get_calendar_events(n=1000, creds=credentials))
