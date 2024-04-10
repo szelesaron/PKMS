@@ -60,13 +60,13 @@ def get_emails(n : int, creds : Credentials):
                     subject = d['value'] 
                 if d['name'] == 'From': 
                     sender = d['value'] 
-  
-            # Get the data and decode it with base 64 decoder. 
+
+            parts = payload.get("parts")[0]
+            print(payload)
+            print("-----------------")
             try:
-                parts = payload.get('parts')[0] 
                 data = parts['body']['data']
             except KeyError:
-                parts = payload.get('parts')[0]
                 data = parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
             data = data.replace("-","+").replace("_","/") 
             body = base64.b64decode(data).decode('utf-8')
@@ -152,7 +152,7 @@ def get_calendar_events(n : int, creds : Credentials) -> list:
 if __name__ == "__main__":
     credentials = authenticate()
 
-    res = get_emails(6, credentials)
+    res = get_emails(10, credentials)
     for r in res:
         print(r)
         print("\n")
