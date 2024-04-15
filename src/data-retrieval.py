@@ -73,7 +73,10 @@ def get_emails(n : int, creds : Credentials, q = None):
                 data = email_parts["parts"][0]["body"]["data"] #sometimes the formatting is different idk
             data = data.replace("-","+").replace("_","/") 
             body = base64.b64decode(data).decode('utf-8')
-            emails.append({"subject": subject, "sender": sender, "body": body, "attachments" : attachment_names})
+            emails.append({"subject": subject, 
+                           "sender": sender, 
+                           "body": body, 
+                           "attachments" : attachment_names})
         except Exception as e: 
             print("Unable to get the message: ", e)
     return emails
@@ -156,10 +159,10 @@ if __name__ == "__main__":
     # print(get_notes(credentials))
     credentials = authenticate()
 
-    res = get_emails(5, credentials)
-    for r in res:
-        print(r)
-        print("\n")
-    print(len(res))
+    # res = get_emails(5, credentials)
+    # for r in res:
+    #     print(r)
+    #     print("\n")
+    # print(len(res))
     # print(get_drive_files(credentials))
-    # print(get_calendar_events(n=1000, creds=credentials))
+    print(get_calendar_events(n=1000, creds=credentials))
