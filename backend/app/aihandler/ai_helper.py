@@ -1,7 +1,10 @@
 from openai import AsyncOpenAI
 import os
+from dotenv import load_dotenv
+load_dotenv(".env")
 
-client = AsyncOpenAI(api_key="sk-proj-KM7jEYCq22ckCPfnJBTkT3BlbkFJ0WQDyU3p4oTGyhI1kWls")
+
+client = AsyncOpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
 
 
@@ -12,7 +15,7 @@ async def get_llm_response(query: str):
             {"role": "user", "content": query},
         ],
         model="gpt-3.5-turbo",
-        seed=os.getenv("OPENAI_SEED"),
+        seed=int(os.getenv("OPENAI_SEED")),
     )
     return response.choices[0].message.content
 
