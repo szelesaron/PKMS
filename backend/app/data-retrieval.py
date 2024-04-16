@@ -10,13 +10,14 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import base64  
+import chardet
 from datetime import datetime
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/drive.readonly", "https://www.googleapis.com/auth/calendar.readonly"]
 
 
-def authenticate(token_path: str = "src/auth_data/token.json"):
+def authenticate(token_path: str = "backend/app/auth_data/token.json"):
     """Authenticate the user and return the credentials.
         If a new service is added, token.json needs to be deleted.
     """
@@ -30,7 +31,7 @@ def authenticate(token_path: str = "src/auth_data/token.json"):
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                "src/auth_data/credentials.json", SCOPES
+                "backend/app/auth_data/credentials.json", SCOPES
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
@@ -135,6 +136,8 @@ def get_calendar_events(n : int, creds : Credentials) -> list:
             end = event["end"].get("dateTime", event["end"].get("date"))
             summary = event["summary"]
             description = event.get("description")
+            if description:
+                description = description.encode('utf-8').decode('unicode_escape')
             timezone = event["start"].get("timeZone")
             link = event["htmlLink"]
 
@@ -159,10 +162,16 @@ if __name__ == "__main__":
     # print(get_notes(credentials))
     credentials = authenticate()
 
-    # res = get_emails(5, credentials)
+    # res = get_emails(10000000, credentials)
     # for r in res:
     #     print(r)
     #     print("\n")
     # print(len(res))
-    # print(get_drive_files(credentials))
-    print(get_calendar_events(n=1000, creds=credentials))
+    print(get_drive_files(credentials))
+    # res = get_calendar_events(n=1000, creds=credentials)
+
+    # write json object to file
+    # import json
+    # res_dict = {"emails": res}
+    # with open("db/temp_data_store/emails.json", "w", encoding="utf-8") as file:
+    #     json.dump(res_dict, file, indent=4, ensure_ascii=False)
