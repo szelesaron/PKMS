@@ -8,15 +8,20 @@ import { Message } from './components/Response';
 
 function App() {
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleFormSubmit = (name: any) => {
-    axios.post('http://localhost:8000', { name })
+  const handleFormSubmit = (query: any) => {
+    setIsLoading(true);
+    axios.post('http://localhost:8001', { query })
       .then((response) => {
         setMessage(response.data.message);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error(error);
+        setIsLoading(false);
       });
+
   };
 
 
@@ -25,7 +30,7 @@ function App() {
     <div>
       <Header /> {/* Use the 'Header' component */}
       <Form onFormSubmit={handleFormSubmit} />
-      <Message message={message} />
+      {isLoading ? <div className="response">Loading...</div> : <Message message={message} />}  {/* Render the loading animation if isLoading is true */}
     </div>
   );
 }

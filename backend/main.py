@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException  
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware  
-from pydantic import BaseModel  
-  
+from app.models import Questions  
+from app.aihandler.ai_helper import get_response, get_llm_response
+
 app = FastAPI()  
   
 app.add_middleware(  
@@ -12,17 +13,13 @@ app.add_middleware(
     allow_headers=["*"],  
 )  
   
-class Name(BaseModel):  
-    name: str  
-  
-@app.post("/")  
-async def create_item(item: Name):  
-    # Process the data and return a response  
-    if item.name:  
-        return {"message": f"Hello, {item.name}!"}  
-    else:  
-        raise HTTPException(status_code=400, detail="Name not provided")  
-  
-@app.get("/")  
-def read_root():  
-    return {"Hello": "World"}  
+@app.post("/")
+async def create_item(question: Questions):
+    # Process the data and return a response
+    if question.query:
+        response = await get_response(question.query)
+        return response
+    else:
+        raise HTTPException(status_code=400, detail="Name not provided")
+    
+
