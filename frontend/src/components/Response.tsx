@@ -1,5 +1,6 @@
+// Response.tsx
 import "../App.css";
 
-export function Message({ message }: { message: string }) {
-    return message && <div className="response">{message}</div>;
-}  
+export function Response({ response }: { response: string }) {
+    return response && <div className="response"><pre>{response}</pre></div>;
+}

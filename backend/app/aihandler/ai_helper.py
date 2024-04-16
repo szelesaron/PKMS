@@ -21,4 +21,5 @@ async def get_llm_response(query: str):
 
 async def get_response(query: str):
     response = await get_llm_response(query)
+    print(response)
     return {"message" : response}

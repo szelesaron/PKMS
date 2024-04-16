@@ -97,6 +97,10 @@
     /* add transition for smooth effect */
 }
 
+.response pre {
+    white-space: pre-wrap;
+}
+
 .response:hover {
     transform: scale(1.05);
     /* scale response on hover */
